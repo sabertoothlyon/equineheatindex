@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Horseback Heat Index</title>
+<style>
+:root{
+  --bg:#f4efe4; --panel:#fffdf8; --ink:#2b2620; --ink-soft:#6b6153;
+  --line:#ddd3bf; --accent:#6b5836;
+  --low:#3f7d4a; --low-bg:#e5f1e3;
+  --mod:#b8860b; --mod-bg:#fbf1d6;
+  --high:#c1571f; --high-bg:#fbe6d6;
+  --ext:#a3222a; --ext-bg:#f9dcdc;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1c1812; --panel:#26211a; --ink:#efe8d9; --ink-soft:#b3a892;
+    --line:#3c352a; --accent:#d8c496;
+    --low-bg:#1c2b1f; --mod-bg:#2e2610; --high-bg:#331f11; --ext-bg:#331213;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1c1812; --panel:#26211a; --ink:#efe8d9; --ink-soft:#b3a892;
+  --line:#3c352a; --accent:#d8c496;
+  --low-bg:#1c2b1f; --mod-bg:#2e2610; --high-bg:#331f11; --ext-bg:#331213;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%;}
+*{box-sizing:border-box;}
+body{
+  margin:0; min-height:100%; background:var(--bg); color:var(--ink);
+  font-family:"Iowan Old Style","Georgia",serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:640px;margin:0 auto;padding:28px 20px 48px;}
+header{margin-bottom:22px;}
+.eyebrow{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent); font-weight:700; margin:0 0 6px;
+}
+h1{font-size:28px; line-height:1.15; margin:0 0 6px; font-weight:600;}
+.sub{color:var(--ink-soft); font-size:15px; margin:0; max-width:46ch;}
+
+.panel{
+  background:var(--panel); border:1px solid var(--line); border-radius:14px;
+  padding:22px; margin-bottom:18px;
+}
+
+.inputs{display:flex; gap:14px; flex-wrap:wrap;}
+.field{flex:1; min-width:130px;}
+label{
+  display:block; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:12px; color:var(--ink-soft); margin-bottom:6px; letter-spacing:.02em;
+}
+input[type=number]{
+  width:100%; font-size:26px; font-family:inherit; color:var(--ink);
+  background:transparent; border:none; border-bottom:2px solid var(--line);
+  padding:4px 2px 8px; -moz-appearance:textfield;
+}
+input[type=number]:focus{outline:none; border-bottom-color:var(--accent);}
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+
+.noaa-link{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:13px; color:var(--accent); text-decoration:none; margin-top:16px;
+  border-bottom:1px solid var(--accent); padding-bottom:1px;
+}
+
+.result{
+  border-radius:14px; padding:24px 22px; margin-bottom:18px;
+  border:1px solid var(--line); transition:background .2s, border-color .2s;
+}
+.result .idx-label{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft);
+}
+.result .idx-num{font-size:56px; font-weight:600; line-height:1.05; margin:4px 0 2px;}
+.result .risk-tag{
+  display:inline-block; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:14px; font-weight:700; letter-spacing:.03em; padding:3px 10px;
+  border-radius:20px; margin-bottom:12px;
+}
+.result p{font-size:15.5px; line-height:1.5; margin:0;}
+
+.r-low{background:var(--low-bg);} .r-low .risk-tag{background:var(--low); color:#fff;}
+.r-mod{background:var(--mod-bg);} .r-mod .risk-tag{background:var(--mod); color:#fff;}
+.r-high{background:var(--high-bg);} .r-high .risk-tag{background:var(--high); color:#fff;}
+.r-ext{background:var(--ext-bg);} .r-ext .risk-tag{background:var(--ext); color:#fff;}
+
+table{width:100%; border-collapse:collapse; font-size:14px;}
+th,td{text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top;}
+th{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); font-weight:600;
+}
+tr:last-child td{border-bottom:none;}
+.swatch{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:7px; vertical-align:middle;}
+.active-row{outline:2px solid var(--accent); outline-offset:-2px; border-radius:6px;}
+
+footer{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:12px; color:var(--ink-soft); margin-top:8px; line-height:1.5;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Kualoa Ranch &middot; Horseback Tours</p>
+    <h1>Equine Heat Index</h1>
+    <p class="sub">Temperature + humidity, at a glance. Enter current conditions to see horse heat-stress risk and the standard response.</p>
+  </header>
+
+  <div class="panel">
+    <div class="inputs">
+      <div class="field">
+        <label for="temp">Temperature (&deg;F)</label>
+        <input type="number" id="temp" inputmode="numeric" placeholder="e.g. 82">
+      </div>
+      <div class="field">
+        <label for="hum">Humidity (%)</label>
+        <input type="number" id="hum" inputmode="numeric" placeholder="e.g. 78">
+      </div>
+    </div>
+    <a class="noaa-link" href="https://forecast.weather.gov/MapClick.php?lat=21.5273&lon=-157.8378" target="_blank" rel="noopener">
+      Check current NOAA conditions (Ka&#699;a&#699;awa) &#8599;
+    </a>
+  </div>
+
+  <div class="result r-low" id="result">
+    <p class="idx-label">Heat Index</p>
+    <p class="idx-num" id="idxNum">&mdash;</p>
+    <span class="risk-tag" id="riskTag">ENTER CONDITIONS</span>
+    <p id="riskText">Add temperature and humidity above to see the current risk level and next steps.</p>
+  </div>
+
+  <div class="panel">
+    <table>
+      <thead>
+        <tr><th>Index</th><th>Risk</th><th>Next steps</th></tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr data-band="low">
+          <td>Below 130</td>
+          <td><span class="swatch" style="background:var(--low)"></span>Low</td>
+          <td>Normal tours, hydration and cooldown as usual.</td>
+        </tr>
+        <tr data-band="mod">
+          <td>130&ndash;150</td>
+          <td><span class="swatch" style="background:var(--mod)"></span>Moderate</td>
+          <td>Monitor horses closely. More water breaks, more recovery time.</td>
+        </tr>
+        <tr data-band="high">
+          <td>150&ndash;180</td>
+          <td><span class="swatch" style="background:var(--high)"></span>High</td>
+          <td>Shorten tours, reduce workload, increase cooling, monitor constantly.</td>
+        </tr>
+        <tr data-band="ext">
+          <td>Above 180</td>
+          <td><span class="swatch" style="background:var(--ext)"></span>Extreme</td>
+          <td>Serious heat-stroke risk. Consider postponing, canceling, or rescheduling.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    Guidelines only &mdash; leadership evaluates all factors and makes the operational call. Report any horse or guest showing heat-stress signs (panting, no sweat, fatigue, dizziness, confusion) to leadership immediately.
+  </footer>
+
+</div>
+
+<script>
+const tempEl = document.getElementById('temp');
+const humEl = document.getElementById('hum');
+const result = document.getElementById('result');
+const idxNum = document.getElementById('idxNum');
+const riskTag = document.getElementById('riskTag');
+const riskText = document.getElementById('riskText');
+const rows = document.querySelectorAll('#tableBody tr');
+
+const bands = {
+  low:  {cls:'r-low',  tag:'LOW RISK',      text:'Horses can generally cool themselves normally. Regular riding and tours may continue with normal hydration and cooldown procedures.'},
+  mod:  {cls:'r-mod',  tag:'MODERATE RISK', text:'Monitor horses closely for signs of heat stress. Increase water breaks and recovery time.'},
+  high: {cls:'r-high', tag:'HIGH RISK',     text:'Cooling ability is significantly reduced. Shorten tours, reduce workload, increase cooling measures, and monitor horses and guests constantly.'},
+  ext:  {cls:'r-ext',  tag:'EXTREME RISK',  text:'Serious risk of heat stress and heat stroke. Consider postponing, canceling, or rescheduling tours.'}
+};
+
+function bandFor(v){
+  if(v < 130) return 'low';
+  if(v <= 150) return 'mod';
+  if(v <= 180) return 'high';
+  return 'ext';
+}
+
+function update(){
+  const t = parseFloat(tempEl.value);
+  const h = parseFloat(humEl.value);
+  rows.forEach(r => r.classList.remove('active-row'));
+
+  if(isNaN(t) || isNaN(h)){
+    idxNum.textContent = '\u2014';
+    riskTag.textContent = 'ENTER CONDITIONS';
+    riskText.textContent = 'Add temperature and humidity above to see the current risk level and next steps.';
+    result.className = 'result r-low';
+    return;
+  }
+
+  const idx = Math.round(t + h);
+  const band = bandFor(idx);
+  const b = bands[band];
+
+  idxNum.textContent = idx;
+  riskTag.textContent = b.tag;
+  riskText.textContent = b.text;
+  result.className = 'result ' + b.cls;
+
+  const row = document.querySelector('#tableBody tr[data-band="'+band+'"]');
+  if(row) row.classList.add('active-row');
+}
+
+tempEl.addEventListener('input', update);
+humEl.addEventListener('input', update);
+</script>
+</body>
+</html>
