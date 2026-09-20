@@ -147,22 +147,22 @@ footer{
       </thead>
       <tbody id="tableBody">
         <tr data-band="low">
-          <td>Below 130</td>
+          <td>Below 155</td>
           <td><span class="swatch" style="background:var(--low)"></span>Low</td>
           <td>Horses can generally cool themselves normally. Regular riding and tours may continue with normal hydration and cooldown procedures.</td>
         </tr>
         <tr data-band="mod">
-          <td>130&ndash;150</td>
+          <td>155&ndash;165</td>
           <td><span class="swatch" style="background:var(--mod)"></span>Moderate</td>
           <td>Monitor horses closely for signs of heat stress. Increase water breaks and recovery time.</td>
         </tr>
         <tr data-band="high">
-          <td>150&ndash;180</td>
+          <td>165&ndash;175</td>
           <td><span class="swatch" style="background:var(--high)"></span>High</td>
           <td>Cooling ability is significantly reduced. Shorten tours, reduce workload, increase cooling measures, and monitor horses and guests constantly.</td>
         </tr>
         <tr data-band="ext">
-          <td>Above 180</td>
+          <td>Above 175</td>
           <td><span class="swatch" style="background:var(--ext)"></span>Extreme</td>
           <td>Serious risk of heat stress and heat stroke. Consider postponing, canceling, or rescheduling tours.</td>
         </tr>
@@ -193,9 +193,9 @@ const bands = {
 };
 
 function bandFor(v){
-  if(v < 130) return 'low';
-  if(v <= 150) return 'mod';
-  if(v <= 180) return 'high';
+  if(v < 155) return 'low';
+  if(v <= 165) return 'mod';
+  if(v <= 175) return 'high';
   return 'ext';
 }
 
