@@ -1,9 +1,11 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kualoa Equine Weather</title><style>
 :root{--bg:#eef1ed;--card:#fff;--ink:#202923;--muted:#6d7771;--line:#d9ded9;--good:#2f6b45;--watch:#a06a18;--caution:#b44f2f;--danger:#8b2626}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}.wrap{max-width:1200px;margin:auto;padding:28px 20px 40px}header{display:flex;justify-content:space-between;align-items:end;margin-bottom:22px}h1{margin:0;font-size:32px}h2{margin:0 0 4px;font-size:24px}.location,.updated,.small,.note,.coords{color:var(--muted)}.location{margin-top:5px}.coords{font-size:12px;margin-bottom:12px}.updated{font-size:13px;text-align:right}.locs{display:grid;grid-template-columns:1fr 1fr;gap:24px}.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 2px 8px #0000000a}.current-label{color:var(--muted);font-size:14px}.temp{font-size:56px;font-weight:700;line-height:1}.unit{font-size:22px;color:var(--muted)}.metrics{display:flex;gap:24px;margin-top:14px}.metric-label{color:var(--muted);font-size:13px}.metric-value{font-size:22px;font-weight:700}.heat-card{display:flex;flex-direction:column;justify-content:center}.heat-title{color:var(--muted);font-size:14px}.heat-index{font-size:50px;font-weight:800;line-height:1;margin:7px 0}.status{font-size:17px;font-weight:700}.note{font-size:12px;line-height:1.4;margin-top:10px}.section-title{margin:20px 0 10px;font-size:16px}.periods,.details{display:grid;gap:12px}.periods{grid-template-columns:repeat(3,1fr)}.period{padding:14px}.time{font-weight:700;font-size:16px}.period-temp{font-size:30px;font-weight:700;margin:6px 0 2px}.mini-index{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-weight:700;font-size:14px}.mini-wind{margin-top:8px;font-weight:700;font-size:14px}.details{grid-template-columns:repeat(4,1fr)}.details .card{padding:14px}.detail-value{font-size:20px;font-weight:700;margin-top:4px}.wind-card{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center}.wind-main{font-size:44px;font-weight:800;line-height:1}.wind-main .unit{font-size:18px}.dir{display:inline-block;font-size:30px;line-height:1;margin-right:8px;transition:transform .3s}.wind-dir{font-size:22px;font-weight:700;margin-top:6px}.legend{display:flex;flex-wrap:wrap;gap:12px 20px;color:var(--muted);font-size:13px;margin-top:22px}.good{color:var(--good)}.watch{color:var(--watch)}.caution{color:var(--caution)}.danger{color:var(--danger)}@media(max-width:900px){.locs{grid-template-columns:1fr}}@media(max-width:560px){.hero{grid-template-columns:1fr}.wind-card{grid-template-columns:1fr}.periods{grid-template-columns:1fr}.details{grid-template-columns:repeat(2,1fr)}header{align-items:start;flex-direction:column}.updated{text-align:left}}
+.tip{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);width:min(760px,calc(100% - 40px));background:var(--card);border:1px solid var(--line);border-left:8px solid var(--c,var(--muted));border-radius:16px;padding:18px 22px 22px;box-shadow:0 8px 28px #00000026;opacity:0;pointer-events:none;transition:opacity .6s,transform .6s;overflow:hidden;z-index:10}.tip.on{opacity:1;transform:translate(-50%,0)}.tip-title{font-size:22px;font-weight:700;color:var(--c,var(--ink))}.tip-text{font-size:18px;margin-top:6px;line-height:1.4;white-space:pre-line}.tip-bar{position:absolute;left:0;bottom:0;height:4px;width:100%;background:var(--c,var(--muted));transform-origin:left;opacity:.5}.tip.good{--c:var(--good)}.tip.watch{--c:var(--watch)}.tip.caution{--c:var(--caution)}.tip.danger{--c:var(--danger)}.tip.fun{--c:#4a6fa5}@keyframes tipbar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 </style></head><body><div class="wrap"><header><div><h1>Kualoa Equine Weather</h1><div class="location">Kualoa Ranch area · Kualoa and Kaʻaʻawa</div></div><div class="updated" id="updated">Loading weather…</div></header>
 <div class="locs" id="locs"></div>
 <div class="legend"><span class="good">● Below 155 — LOW</span><span class="watch">● 155–165 — MODERATE</span><span class="caution">● Above 165–175 — HIGH</span><span class="danger">● Above 175 — EXTREME</span></div>
 <div class="legend"><span class="good">● Gusts 25 mph or less — NORMAL</span><span class="caution">● Gusts above 25 mph — ELEVATED</span><span class="danger">● Gusts above 30 mph — HIGH WIND</span></div></div>
+<div class="tip" id="tip"><div class="tip-title" id="tipTitle"></div><div class="tip-text" id="tipText"></div><div class="tip-bar" id="tipBar"></div></div>
 <script>
 const LOCS=[{name:'Kualoa',lat:21.519917,lon:-157.839583},{name:'Kaʻaʻawa',lat:21.539028,lon:-157.841806}];
 const API='https://api.open-meteo.com/v1/forecast?latitude='+LOCS.map(l=>l.lat).join(',')+'&longitude='+LOCS.map(l=>l.lon).join(',')+'&current=temperature_2m,relative_humidity_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m&daily=temperature_2m_max,temperature_2m_min,rain_sum,wind_speed_10m_max,wind_gusts_10m_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=Pacific%2FHonolulu&forecast_days=1';
@@ -28,5 +30,68 @@ let ws=+c.wind_speed_10m,wg=+c.wind_gusts_10m,wd=+c.wind_direction_10m,[wl,wc]=w
 [7,13,18].forEach(hr=>{let n=nearest(d.hourly.time,hr),tt=+d.hourly.temperature_2m[n],hh=+d.hourly.relative_humidity_2m[n];$('t'+hr+'_'+i).textContent=Math.round(tt)+'°F';$('h'+hr+'_'+i).textContent='Humidity '+Math.round(hh)+'%';setStatus($('i'+hr+'_'+i),heatIndex(tt,hh),true);
 let s=+d.hourly.wind_speed_10m[n],g=+d.hourly.wind_gusts_10m[n],dr=+d.hourly.wind_direction_10m[n],[l2,c2]=windStatus(g),we=$('w'+hr+'_'+i);we.textContent=`Wind ${Math.round(s)} mph ${compass(dr)} · Gusts ${Math.round(g)} · ${l2}`;we.className='mini-wind '+c2});
 $('high'+i).textContent=Math.round(d.daily.temperature_2m_max[0])+'°F';$('low'+i).textContent=Math.round(d.daily.temperature_2m_min[0])+'°F';$('rain'+i).textContent=(+d.daily.rain_sum[0]).toFixed(2)+'"';$('wind'+i).textContent=Math.round(d.daily.wind_speed_10m_max[0])+' / '+Math.round(d.daily.wind_gusts_10m_max[0])+' mph'}
-async function load(){try{let r=await fetch(API);if(!r.ok)throw Error('request failed');let d=await r.json();if(!Array.isArray(d))d=[d];LOCS.forEach((l,i)=>fill(i,d[i]));$('updated').textContent='Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+' · Open-Meteo'}catch(e){$('updated').textContent='Unable to load weather data';console.error(e)}}load();setInterval(load,9e5);
+async function load(){try{let r=await fetch(API);if(!r.ok)throw Error('request failed');let d=await r.json();if(!Array.isArray(d))d=[d];LOCS.forEach((l,i)=>fill(i,d[i]));LAST=d;$('updated').textContent='Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+' · Open-Meteo'}catch(e){$('updated').textContent='Unable to load weather data';console.error(e)}}var LAST=null;
+const SHOW_MS=12000,GAP_MS=12000;
+const SOP_TIPS=[
+['Plan for normal operations','Tours run as scheduled until leadership says otherwise.','info'],
+['Operational status','Closures and cancellations come from Operations Leadership. Do not call the Ticket Office for status updates.','info'],
+['Route changes','Changes come by radio, text, or direct supervisor notification. Present modified tours professionally and positively.','info'],
+['Refund and ticket questions','Refer refund, credit, and ticket questions to the Ticket Office or management.','info'],
+['Weather emergencies','Safety of guests, horses, and staff comes first. Stay calm. Horses respond to your behavior.','info'],
+['Communicate early','Report changing weather, trail hazards, and safety concerns to supervisors right away.','info'],
+['Unsure? Call','If you are unsure how to proceed, contact management by radio or phone before deciding.','info'],
+['Lightning on tour','Notify management you are returning, then turn the group around as soon as it is safe. Your location on the trail does not matter.','info'],
+['Lightning: guest requests','If a guest feels unsafe continuing on horseback, contact Palekana by radio or phone.','info'],
+['Lightning at the ranch','Notify management, update all staff, and follow leadership direction.','info'],
+['Lightning and horses','Untie horses if leadership directs or safety requires. Move to a safe area away from horses, such as the tack room or mounting area shelter.','info'],
+['Lightning: guests waiting','Tell guests tours are delayed for weather safety. Guests in the mounting area stay in place until leadership gives direction.','info'],
+['Lightning holds','Decisions are made case by case, with safety first. Refer delay and ticket questions to management or the Ticket Office.','info'],
+['Thunder without lightning','Tours may continue unless management directs otherwise. If lightning appears, follow lightning procedures.','info'],
+['Wind: report it','Report helmet fit problems, loose equipment, reduced rider control, or any safety concern to leadership right away.','info'],
+['Wind: secure gear','Secure saddle bags, jackets, hats, and loose items. Watch for tree movement, blowing debris, and reduced visibility.','info'],
+['Wind: stay reachable','Wind varies across the property and valleys. Keep radios and phones on and monitored.','info'],
+['Wind: higher trails','If you judge higher-elevation trails unsafe, tell leadership immediately. Leadership approves and communicates reroutes.','info'],
+['Rain operations','Tours continue in normal and moderate rain unless leadership directs otherwise.','info'],
+['Rain: trail hazards','Report slippery or muddy trails, erosion, washouts, standing water, and unsafe footing.','info'],
+['Rain gear','Guests keep rain gear on for the whole tour, even after the rain stops. Secure it before departure so it does not flap and startle horses.','info'],
+['Horse heat stress signs','Watch for heavy panting, lack of sweating, unusual fatigue, slow recovery, or changes in demeanor. Report to leadership immediately.','info'],
+['Employee heat safety','Dizziness, fatigue, nausea, headache, or weakness: tell leadership. Stop work if it creates a safety risk.','info'],
+['Guest heat safety','Watch for fatigue, dizziness, confusion, nausea, weakness, or low responsiveness. Speak with the guest privately and encourage hydration.','info'],
+['Guest unwell','Assess whether they can safely continue. Contact leadership if symptoms worsen.','info']
+];
+const JOKES=[
+['Horse humor','What do you call a horse that lives next door?\nA neigh-bor.','fun'],
+['Horse humor','Why did the horse go to the doctor?\nHe was a little hoarse.','fun'],
+['Horse humor','What do you call a horse that stays up all night?\nA night mare.','fun'],
+['Horse humor','What is a horse\'s favorite sport?\nStable tennis.','fun'],
+['Horse humor','Why did the horse get promoted?\nHe was a real stable employee.','fun'],
+['Horse humor','What is a horse\'s favorite TV show?\nWhinny the Pooh.','fun'],
+['Horse humor','Why do horses wear helmets on tour?\nNo horsing around when it comes to safety.','fun'],
+['Horse humor','Why did the cowboy ride his horse?\nIt was too heavy to carry.','fun'],
+['Horse humor','Where do sick horses go?\nThe horspital.','fun'],
+['Horse humor','What is a horse\'s favorite weather?\nNeigh-ther too hot nor too cold.','fun']
+];
+const STATIC_TIPS=[];
+SOP_TIPS.forEach((t,i)=>{STATIC_TIPS.push(t);if(i%5==1||i%5==3)STATIC_TIPS.push(JOKES[Math.floor(i/5)*2+(i%5==3?1:0)])});
+function buildTips(){
+let tips=[];
+if(LAST){
+let worst=0,wn='',gust=0,peak=0;
+LOCS.forEach((l,i)=>{let c=LAST[i].current,x=heatIndex(+c.temperature_2m,+c.relative_humidity_2m);if(x>=worst){worst=x;wn=l.name}gust=Math.max(gust,+c.wind_gusts_10m);peak=Math.max(peak,+LAST[i].daily.wind_gusts_10m_max[0])});
+let[hs,hc,hg]=status(worst);
+tips.push(['Heat Index '+worst+' · '+hs,hg+' (highest: '+wn+')',hc]);
+let[ws,wc]=windStatus(gust);
+tips.push(['Gusts '+Math.round(gust)+' mph · '+ws,gust>30?'Gusts exceeding 30 MPH may result in reroutes, shortened tours, delays, or cancellations.':gust>25?'Sustained gusts exceeding 25 MPH may warrant route adjustments.':'Wind within normal range. Today\'s gusts peak near '+Math.round(peak)+' mph.',wc])}
+return tips}
+let tipI=0,sI=0;
+function showTip(){
+let live=buildTips(),n=tipI++,t;
+if(live.length&&n%6<2)t=live[n%6];else t=STATIC_TIPS[sI++%STATIC_TIPS.length];
+let el=$('tip');$('tipTitle').textContent=t[0];$('tipText').textContent=t[1];el.className='tip '+t[2];
+let bar=$('tipBar');bar.style.animation='none';void bar.offsetWidth;bar.style.animation='tipbar '+SHOW_MS+'ms linear forwards';
+requestAnimationFrame(()=>el.classList.add('on'));
+setTimeout(()=>el.classList.remove('on'),SHOW_MS);
+setTimeout(showTip,SHOW_MS+GAP_MS)}
+setTimeout(showTip,4000);
+load();setInterval(load,9e5);
 </script></body></html>
