@@ -68,7 +68,8 @@ const JOKES=[
 ['Horse humor','What is a horse\'s favorite TV show?\nWhinny the Pooh.','fun'],
 ['Horse humor','Why do horses wear helmets on tour?\nNo horsing around when it comes to safety.','fun'],
 ['Horse humor','Why did the cowboy ride his horse?\nIt was too heavy to carry.','fun'],
-['Horse humor','What is a horse\'s favorite weather?\nNeigh-ther too hot nor too cold.','fun']
+['Horse humor','What is a horse\'s favorite weather?\nNeigh-ther too hot nor too cold.','fun'],
+['Horse humor', 'What do you call a horse that lives next door?\nA neigh-bor.', 'fun']
 ];
 const STATIC_TIPS=[];
 SOP_TIPS.forEach((t,i)=>{STATIC_TIPS.push(t);if(i%5==1||i%5==3)STATIC_TIPS.push(JOKES[Math.floor(i/5)*2+(i%5==3?1:0)])});
