@@ -4,7 +4,7 @@
 </style></head><body><div class="wrap"><header><div><h1>Kualoa Equine Weather</h1><div class="location">Kualoa Ranch area · Kualoa and Kaʻaʻawa</div></div><div class="updated" id="updated">Loading weather…</div></header>
 <div class="locs" id="locs"></div>
 <div class="legend"><span class="good">● Below 155 — LOW</span><span class="watch">● 155–165 — MODERATE</span><span class="caution">● Above 165–175 — HIGH</span><span class="danger">● Above 175 — EXTREME</span></div>
-<div class="legend"><span class="good">● Gusts 25 mph or less — NORMAL</span><span class="caution">● Gusts above 25 mph — ELEVATED</span><span class="danger">● Gusts above 30 mph — HIGH WIND</span></div></div>
+<div class="legend"><span class="good">● Sustained wind 25 mph or less — NORMAL</span><span class="caution">● Sustained wind above 25 mph — ELEVATED</span><span class="danger">● Sustained wind above 30 mph — HIGH WIND</span></div></div>
 <div class="tip" id="tip"><div class="tip-title" id="tipTitle"></div><div class="tip-text" id="tipText"></div><div class="tip-bar" id="tipBar"></div></div>
 <script>
 const LOCS=[{name:'Kualoa',lat:21.519917,lon:-157.839583},{name:'Kaʻaʻawa',lat:21.539028,lon:-157.841806}];
@@ -12,23 +12,24 @@ const API='https://api.open-meteo.com/v1/forecast?latitude='+LOCS.map(l=>l.lat).
 function heatIndex(t,h){return Math.round(t+h)}
 function status(i){return i<155?['LOW','good','Normal riding/tours with routine hydration and cooldown.']:i<=165?['MODERATE','watch','Monitor closely; increase water breaks and recovery time.']:i<=175?['HIGH','caution','Shorten tours, reduce workload, increase cooling, and monitor constantly.']:['EXTREME','danger','Consider postponing, canceling, or rescheduling tours.']}
 function setStatus(el,i,mini=false){let[s,c,g]=status(i);el.textContent=mini?`Heat Index ${i} · ${s}`:s;el.className=(mini?'mini-index ':'status ')+c;if(!mini){let n=el.nextElementSibling;if(n)n.textContent=g}}
-function windStatus(g){return g>30?['HIGH WIND','danger']:g>25?['ELEVATED','caution']:['NORMAL','good']}
+const WIND_ELEVATED=25,WIND_HIGH=30;/* mph, applied to SUSTAINED wind (10-min avg), not gusts */
+function windStatus(v){return v>WIND_HIGH?['HIGH WIND','danger']:v>WIND_ELEVATED?['ELEVATED','caution']:['NORMAL','good']}
 const DIRS=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
 function compass(d){return DIRS[Math.round(((+d%360)+360)%360/22.5)%16]}
 function nearest(times,target){let b=0,d=1e9;times.forEach((x,i)=>{let h=+x.slice(11,13),q=Math.abs(h-target);if(q<d){d=q;b=i}});return b}
 function build(i,l){return `<section><h2>${l.name}</h2><div class="coords">${l.lat.toFixed(6)}, ${l.lon.toFixed(6)}</div>
 <div class="hero"><div class="card"><div class="current-label">Current conditions</div><div><span class="temp" id="currentTemp${i}">—</span><span class="unit"> °F</span></div><div class="metrics"><div><div class="metric-label">Relative Humidity</div><div class="metric-value" id="currentHumidity${i}">—%</div></div><div><div class="metric-label">Dew Point</div><div class="metric-value" id="currentDew${i}">—°F</div></div></div></div>
 <div class="card heat-card"><div class="heat-title">Equine Heat Index</div><div class="heat-index" id="currentIndex${i}">—</div><div class="status" id="currentStatus${i}">Waiting for data</div><div class="note">Kualoa operating guidance based on temperature + relative humidity. Use with horse condition, workload, shade, airflow and water access.</div></div></div>
-<div class="section-title">Wind</div><div class="card wind-card"><div><div class="current-label">Current gusts</div><div class="wind-main"><span id="windGust${i}">—</span><span class="unit"> mph</span></div><div class="small" style="margin-top:6px">Sustained <b id="windSpeed${i}">—</b> mph</div><div class="wind-dir"><span class="dir" id="windArrow${i}">↑</span><span id="windDir${i}">—</span></div></div>
-<div><div class="status" id="windStatus${i}">Waiting for data</div><div class="note">Sustained gusts exceeding 25 MPH may warrant route adjustments.<br>Gusts exceeding 30 MPH may result in reroutes, shortened tours, delays, or cancellations.</div></div></div>
+<div class="section-title">Wind</div><div class="card wind-card"><div><div class="current-label">Sustained wind</div><div class="wind-main"><span id="windSpeed${i}">—</span><span class="unit"> mph</span></div><div class="small" style="margin-top:6px">Gusts <b id="windGust${i}">—</b> mph (reference only)</div><div class="wind-dir"><span class="dir" id="windArrow${i}">↑</span><span id="windDir${i}">—</span></div></div>
+<div><div class="status" id="windStatus${i}">Waiting for data</div><div class="note">Sustained wind above 25 MPH may warrant route adjustments.<br>Sustained wind above 30 MPH may result in reroutes, shortened tours, delays, or cancellations.<br>Gusts are shown for reference and do not set the status.</div></div></div>
 <div class="section-title">Daily checkpoints</div><div class="periods">${[[7,'7:00 AM'],[13,'1:00 PM'],[18,'6:00 PM']].map(([h,t])=>`<div class="card period"><div class="time">${t}</div><div class="period-temp" id="t${h}_${i}">—</div><div class="small" id="h${h}_${i}">Humidity —</div><div class="mini-index" id="i${h}_${i}">Heat Index —</div><div class="mini-wind" id="w${h}_${i}">Wind —</div></div>`).join('')}</div>
-<div class="section-title">Other conditions</div><div class="details"><div class="card"><div class="small">Today's High</div><div class="detail-value" id="high${i}">—</div></div><div class="card"><div class="small">Today's Low</div><div class="detail-value" id="low${i}">—</div></div><div class="card"><div class="small">Rain</div><div class="detail-value" id="rain${i}">—</div></div><div class="card"><div class="small">Max Wind / Gust</div><div class="detail-value" id="wind${i}">—</div></div></div></section>`}
+<div class="section-title">Other conditions</div><div class="details"><div class="card"><div class="small">Today's High</div><div class="detail-value" id="high${i}">—</div></div><div class="card"><div class="small">Today's Low</div><div class="detail-value" id="low${i}">—</div></div><div class="card"><div class="small">Rain</div><div class="detail-value" id="rain${i}">—</div></div><div class="card"><div class="small">Peak Sustained / Gust</div><div class="detail-value" id="wind${i}">—</div></div></div></section>`}
 document.getElementById('locs').innerHTML=LOCS.map((l,i)=>build(i,l)).join('');
 const $=id=>document.getElementById(id);
 function fill(i,d){let c=d.current,t=+c.temperature_2m,h=+c.relative_humidity_2m,x=heatIndex(t,h);$('currentTemp'+i).textContent=Math.round(t);$('currentHumidity'+i).textContent=Math.round(h)+'%';$('currentDew'+i).textContent=Math.round(c.dew_point_2m)+'°F';$('currentIndex'+i).textContent=x;setStatus($('currentStatus'+i),x);
-let ws=+c.wind_speed_10m,wg=+c.wind_gusts_10m,wd=+c.wind_direction_10m,[wl,wc]=windStatus(wg);$('windGust'+i).textContent=Math.round(wg);$('windSpeed'+i).textContent=Math.round(ws);$('windDir'+i).textContent='From '+compass(wd)+' ('+Math.round(wd)+'°)';$('windArrow'+i).style.transform='rotate('+(wd+180)+'deg)';let se=$('windStatus'+i);se.textContent=wl;se.className='status '+wc;
+let ws=+c.wind_speed_10m,wg=+c.wind_gusts_10m,wd=+c.wind_direction_10m,[wl,wc]=windStatus(ws);$('windGust'+i).textContent=Math.round(wg);$('windSpeed'+i).textContent=Math.round(ws);$('windDir'+i).textContent='From '+compass(wd)+' ('+Math.round(wd)+'°)';$('windArrow'+i).style.transform='rotate('+(wd+180)+'deg)';let se=$('windStatus'+i);se.textContent=wl;se.className='status '+wc;
 [7,13,18].forEach(hr=>{let n=nearest(d.hourly.time,hr),tt=+d.hourly.temperature_2m[n],hh=+d.hourly.relative_humidity_2m[n];$('t'+hr+'_'+i).textContent=Math.round(tt)+'°F';$('h'+hr+'_'+i).textContent='Humidity '+Math.round(hh)+'%';setStatus($('i'+hr+'_'+i),heatIndex(tt,hh),true);
-let s=+d.hourly.wind_speed_10m[n],g=+d.hourly.wind_gusts_10m[n],dr=+d.hourly.wind_direction_10m[n],[l2,c2]=windStatus(g),we=$('w'+hr+'_'+i);we.textContent=`Wind ${Math.round(s)} mph ${compass(dr)} · Gusts ${Math.round(g)} · ${l2}`;we.className='mini-wind '+c2});
+let s=+d.hourly.wind_speed_10m[n],g=+d.hourly.wind_gusts_10m[n],dr=+d.hourly.wind_direction_10m[n],[l2,c2]=windStatus(s),we=$('w'+hr+'_'+i);we.textContent=`Sustained ${Math.round(s)} mph ${compass(dr)} · Gusts ${Math.round(g)} · ${l2}`;we.className='mini-wind '+c2});
 $('high'+i).textContent=Math.round(d.daily.temperature_2m_max[0])+'°F';$('low'+i).textContent=Math.round(d.daily.temperature_2m_min[0])+'°F';$('rain'+i).textContent=(+d.daily.rain_sum[0]).toFixed(2)+'"';$('wind'+i).textContent=Math.round(d.daily.wind_speed_10m_max[0])+' / '+Math.round(d.daily.wind_gusts_10m_max[0])+' mph'}
 async function load(){try{let r=await fetch(API);if(!r.ok)throw Error('request failed');let d=await r.json();if(!Array.isArray(d))d=[d];LOCS.forEach((l,i)=>fill(i,d[i]));LAST=d;$('updated').textContent='Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+' · Open-Meteo'}catch(e){$('updated').textContent='Unable to load weather data';console.error(e)}}var LAST=null;
 const SHOW_MS=12000,GAP_MS=12000;
@@ -65,11 +66,11 @@ function buildTips(){
 let tips=[];
 if(LAST){
 let worst=0,wn='',gust=0,peak=0;
-LOCS.forEach((l,i)=>{let c=LAST[i].current,x=heatIndex(+c.temperature_2m,+c.relative_humidity_2m);if(x>=worst){worst=x;wn=l.name}gust=Math.max(gust,+c.wind_gusts_10m);peak=Math.max(peak,+LAST[i].daily.wind_gusts_10m_max[0])});
+LOCS.forEach((l,i)=>{let c=LAST[i].current,x=heatIndex(+c.temperature_2m,+c.relative_humidity_2m);if(x>=worst){worst=x;wn=l.name}gust=Math.max(gust,+c.wind_speed_10m);peak=Math.max(peak,+LAST[i].daily.wind_speed_10m_max[0])});
 let[hs,hc,hg]=status(worst);
 tips.push(['Heat Index '+worst+' · '+hs,hg+' (highest: '+wn+')',hc]);
 let[ws,wc]=windStatus(gust);
-tips.push(['Gusts '+Math.round(gust)+' mph · '+ws,gust>30?'Gusts exceeding 30 MPH may result in reroutes, shortened tours, delays, or cancellations.':gust>25?'Sustained gusts exceeding 25 MPH may warrant route adjustments.':'Wind within normal range. Today\'s gusts peak near '+Math.round(peak)+' mph.',wc])}
+tips.push(['Sustained wind '+Math.round(gust)+' mph · '+ws,gust>WIND_HIGH?'Sustained wind above 30 MPH may result in reroutes, shortened tours, delays, or cancellations.':gust>WIND_ELEVATED?'Sustained wind above 25 MPH may warrant route adjustments.':'Sustained wind within normal range. Today\'s sustained wind peaks near '+Math.round(peak)+' mph.',wc])}
 return tips}
 let tipI=0,sI=0,jI=0;
 function showTip(){
